@@ -1,7 +1,7 @@
 import React, { Component, PropTypes } from 'react';
 import { createContainer } from 'meteor/react-meteor-data';
 
-import { Tasks } from '../api/tasks.js';
+// import { Tasks } from '../api/tasks.js';
 
 import Task from './Task.jsx';
 
@@ -33,6 +33,7 @@ import Task from './Task.jsx';
 // 			</div>
 // 		);
 // 	}
+// }
 
 class App extends Component {
 	renderTasks(){
@@ -41,3 +42,13 @@ class App extends Component {
 		));
 	}
 }
+
+App.PropTypes = {
+	tasks: PropTypes.array.isRequired,
+};
+
+export default createContainer(() => {
+	return {
+		tasks: Tasks.find({}).fetch(),
+	};
+});
