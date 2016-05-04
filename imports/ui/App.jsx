@@ -85,6 +85,7 @@ class App extends Component {
 			<div className="container">
 				<header>
 					<h1>ToDo List ({this.props.incompleteCount})</h1>
+					
 					<label className="hide-completed">
 						<input 
 							type="checkbox"
@@ -94,14 +95,18 @@ class App extends Component {
 						/>
 						Hide Completed Tasks
 					</label>
+					
 					<AccountsUIWrapper />
-					<form className="new-task" onSubmit={this.handleSubmit.bind(this)}>
-						<input
-							type="text"
-							ref="textInput"
-							placeholder="Next Task....?"
-						/>
-					</form>
+
+					{ this.props.currentUser ?
+						<form className="new-task" onSubmit={this.handleSubmit.bind(this)}>
+							<input
+								type="text"
+								ref="textInput"
+								placeholder="Next Task....?"
+							/>
+						</form> : ''
+					}
 				</header>
 				<ul>
 					{this.renderTasks()}
@@ -114,6 +119,7 @@ class App extends Component {
 App.PropTypes = {
 	tasks: PropTypes.array.isRequired,
 	incompleteCount: PropTypes.number.isRequired,
+	currentUser: PropTypes.object,
 };
 
 export default createContainer(() => {
