@@ -80,7 +80,7 @@ class App extends Component {
 		return (
 			<div className="container">
 				<header>
-					<h1>ToDo List</h1>
+					<h1>ToDo List ({this.props.incompleteCount})</h1>
 					<label className="hide-completed">
 						<input 
 							type="checkbox"
@@ -108,10 +108,12 @@ class App extends Component {
 
 App.PropTypes = {
 	tasks: PropTypes.array.isRequired,
+	incompleteCount: PropTypes.number.isRequired,
 };
 
 export default createContainer(() => {
 	return {
 		tasks: Tasks.find({}, { sort: {createdAt: -1} }).fetch(),
+		incompleteCount: Tasks.find({checked: { $ne: true } }).count(),
 	};
 }, App);
