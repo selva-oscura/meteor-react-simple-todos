@@ -1,5 +1,6 @@
 import React, { Component, PropTypes } from 'react';
 import ReactDOM from 'react-dom';
+import { Meteor } from 'meteor/meteor';
 import { createContainer } from 'meteor/react-meteor-data';
 
 import { Tasks } from '../api/tasks.js';
@@ -51,7 +52,9 @@ class App extends Component {
 		const text = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
 		Tasks.insert({
 			text,
-			createdAt: new Date(),
+			owner: Meteor.userId(), // id of current user
+			username: Meteor.user().username,  // username of current user
+			createdAt: new Date(), //current time
 		});
 
 		// Clear form
@@ -117,5 +120,6 @@ export default createContainer(() => {
 	return {
 		tasks: Tasks.find({}, { sort: {createdAt: -1} }).fetch(),
 		incompleteCount: Tasks.find({checked: { $ne: true } }).count(),
+		currentUser: Meteor.user(),
 	};
 }, App);
