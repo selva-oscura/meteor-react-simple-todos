@@ -50,12 +50,17 @@ class App extends Component {
 
 		// Find the text filed via the React ref
 		const text = ReactDOM.findDOMNode(this.refs.textInput).value.trim();
-		Tasks.insert({
-			text,
-			owner: Meteor.userId(), // id of current user
-			username: Meteor.user().username,  // username of current user
-			createdAt: new Date(), //current time
-		});
+
+		// deprecated after adding task.insert method in imports/api/tasks.js
+		// Tasks.insert({
+		// 	text,
+		// 	owner: Meteor.userId(), // id of current user
+		// 	username: Meteor.user().username,  // username of current user
+		// 	createdAt: new Date(), //current time
+		// });
+
+		// call tasks.insert method in imports/api/tasks.js
+		Meteor.call('tasks.insert', text);
 
 		// Clear form
 		ReactDOM.findDOMNode(this.refs.textInput).value='';
