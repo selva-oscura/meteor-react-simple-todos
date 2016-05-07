@@ -74,9 +74,100 @@ if(Meteor.isServer){
 				});
 			});
 			describe('set checked tests', () => {
-				it('can set checked status to checked', () => {
+				it('non-logged-in-user can\'t set checked status of public task', () => {
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { notLoggedIn };
+					// setChecked.apply(invocation, [taskId, true]);
+					// Run method with 'this' set to fake invocation
+					expect(setChecked.bind(invocation, [taskId, true])).to.throw(Meteor.Error('not-authorized'));
+				});
+
+				it('non-logged-in-user can\'t set checked status of private task', () => {
+					// set taskId to private
+					Tasks.update({_id:taskId},{$set:{private:true}});
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { notLoggedIn };
+					
+					// check that not-authorized error is thrown when running method with 'this' set to fake invocation for non-owner
+					expect(setChecked.bind(invocation, [taskId, true])).to.throw(Meteor.Error('not-authorized'));
+				});
+
+				it('non-owner can set checked status of public task to checked', () => {
+					// current count of checked tasks
+					const checkedCount = Tasks.find({checked:true}).count();
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+
+					// Run method with 'this' set to fake invocation
+					setChecked.apply(invocation, [taskId, true]);
+
+					// check that the number of checked items is one greater after invoking setChecked true 
+					assert.equal(Tasks.find({checked:true}).count(), checkedCount+1);
+
+				});
+
+				it('non-owner can set checked status of public task to unchecked', () => {
+					// set taskId checked status to true
+					Tasks.update({_id:taskId},{$set:{checked:true}})
+					// current count of checked tasks
+					const checkedCount = Tasks.find({checked:true}).count();
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+
+					// Run method with 'this' set to fake invocation
+					setChecked.apply(invocation, [taskId, false]);
+
+					// check that the number of checked items is one greater after invoking setChecked true 
+					assert.equal(Tasks.find({checked:true}).count(), checkedCount-1);
+
+				});
+
+				it('non-owner can\'t set checked status of private task to checked', () => {
+					// set taskId to private
+					Tasks.update({_id:taskId},{$set:{private:true}});
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+
+					// check that not-authorized error is thrown when running method with 'this' set to fake invocation for non-owner
+					expect(setChecked.bind(invocation, [taskId, true])).to.throw(Meteor.Error('not-authorized'));
+				});
+
+				it('non-owner can\'t set checked status of private task to unchecked', () => {
+					// setting status of task taskId to checked, so that we can then test it is later unchecked
+					Tasks.update({_id:taskId}, {$set:{checked:true}});
+					// set taskId to private
+					Tasks.update({_id:taskId},{$set:{private:true}});
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+
+					// check that not-authorized error is thrown when running method with 'this' set to fake invocation for non-owner
+					expect(setChecked.bind(invocation, [taskId, false])).to.throw(Meteor.Error('not-authorized'));
+				});
+
+				it('owner can set checked status of private task to checked', () => {
+					// make taskId private
+					Tasks.update({_id:taskId},{$set:{private:true}});
+
 					// current count of tasks
 					const checkedCount = Tasks.find({checked:true}).count();
+
 					// Find the internal implementation of the task method in order to test in isolation
 					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
 					// set up fake method invocation consistent with what the method expect
@@ -84,18 +175,23 @@ if(Meteor.isServer){
 
 					// Run method with 'this' set to fake invocation
 					setChecked.apply(invocation, [taskId, true]);
+
+					// check that the number of checked items is one greater after invoking setChecked true 
 					assert.equal(Tasks.find({checked:true}).count(), checkedCount+1);
 				});
-				it('can set checked status to unchecked', () => {
+				it('owner can set checked status of private task to unchecked', () => {
 					// setting status of task taskId to checked, so that we can then test it is later unchecked
+					Tasks.update({_id:taskId}, {$set:{checked:true}});
+					// make taskId private
+					Tasks.update({_id:taskId},{$set:{private:true}});
+
+					// current count of checked tasks
+					const checkedCount = Tasks.find({checked:true}).count();
+
 					// Find the internal implementation of the task method in order to test in isolation
 					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
 					// set up fake method invocation consistent with what the method expect
 					const invocation = { userId };
-					setChecked.apply(invocation, [taskId, true]);
-
-					// current count of tasks
-					const checkedCount = Tasks.find({checked:true}).count();
 
 					// Run method with 'this' set to fake invocation
 					setChecked.apply(invocation, [taskId, false]);
