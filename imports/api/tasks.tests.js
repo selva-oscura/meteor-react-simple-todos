@@ -86,6 +86,23 @@ if(Meteor.isServer){
 					setChecked.apply(invocation, [taskId, true]);
 					assert.equal(Tasks.find({checked:true}).count(), checkedCount+1);
 				});
+				it('can set checked status to unchecked', () => {
+					// setting status of task taskId to checked, so that we can then test it is later unchecked
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { userId };
+					setChecked.apply(invocation, [taskId, true]);
+
+					// current count of tasks
+					const checkedCount = Tasks.find({checked:true}).count();
+
+					// Run method with 'this' set to fake invocation
+					setChecked.apply(invocation, [taskId, false]);
+
+					// check that the number of checked items is one less after invoking setChecked false 
+					assert.equal(Tasks.find({checked:true}).count(), checkedCount-1);
+				});
 			});
 		});
 	});
