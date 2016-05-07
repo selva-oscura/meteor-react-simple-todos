@@ -73,6 +73,70 @@ if(Meteor.isServer){
 					assert.equal(Tasks.find().count(), taskCount-1);
 				});
 			});
+
+			describe('set private tests', () => {
+				it('non-logged-in-user can\'t set private status', () => {
+					// Find the internal implementation of the task method in order to test in isolation
+					const setPrivate = Meteor.server.method_handlers["tasks.setPrivate"];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { notLoggedIn };
+					// Run method with 'this' set to fake invocation
+					expect(setPrivate.bind(invocation, [taskId, true])).to.throw(Meteor.Error('not-authorized'));
+				});
+				it('non-owner can\'t set private status to private', () => {
+					// Find the internal implementation of the task method in order to test in isolation
+					const setPrivate = Meteor.server.method_handlers["tasks.setPrivate"];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+					// Run method with 'this' set to fake invocation
+					expect(setPrivate.bind(invocation, [taskId, true])).to.throw(Meteor.Error('not-authorized'));
+				});
+				it('non-owner can\'t set private status to public', () => {
+					// set taskId privacy status to private
+					Tasks.update({_id:taskId},{$set:{private: true}});
+					const privateCount = Tasks.find({private:true}).count();
+					// Find the internal implementation of the task method in order to test in isolation
+					const setPrivate = Meteor.server.method_handlers["tasks.setPrivate"];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { otherUserId };
+					// Run method with 'this' set to fake invocation
+					// expect(setPrivate.bind(invocation, [taskId, false])).to.throw(Meteor.Error('not-authorized'));
+					assert.equal(privateCount, Tasks.find({private:true}).count());
+				});
+				it('owner can set private status to private', () => {
+					// Find the internal implementation of the task method in order to test in isolation
+					const setPrivate = Meteor.server.method_handlers["tasks.setPrivate"];
+					// current count of private tasks
+					const privateCount = Tasks.find({private:true}).count();
+
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { userId };
+					
+					// Run method with 'this' set to fake invocation
+					setPrivate.apply(invocation, [taskId, true]);
+
+					// check that the number of private items is one more after invoking setPrivate true 
+					assert.equal(Tasks.find({private:true}).count(), privateCount+1);
+				});
+				it('owner can set private status to public', () => {
+					// set taskId privacy status to private
+					Tasks.update({_id:taskId},{$set:{private: true}});
+					// current count of private tasks
+					const privateCount = Tasks.find({private:true}).count();
+					
+					// Find the internal implementation of the task method in order to test in isolation
+					const setPrivate = Meteor.server.method_handlers["tasks.setPrivate"];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { userId };
+					
+					// Run method with 'this' set to fake invocation
+					setPrivate.apply(invocation, [taskId, false]);
+
+					// check that the number of private items is one less after invoking setPrivate false 
+					assert.equal(Tasks.find({private:true}).count(), privateCount-1);
+				});
+			});
+
 			describe('set checked tests', () => {
 				it('non-logged-in-user can\'t set checked status of public task', () => {
 					// Find the internal implementation of the task method in order to test in isolation
