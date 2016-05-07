@@ -14,9 +14,11 @@ if(Meteor.isServer){
 		describe('methods', () => {
 			const userId = Random.id();
 			const otherUserId = Random.id();
+			const notLoggedIn = null;
 			let taskId;
 			beforeEach(() => {
 				Tasks.remove({});
+				Meteor.users.remove({})
 				taskId = Tasks.insert({
 					text: 'test task',
 					createdAt: new Date(),
@@ -24,8 +26,25 @@ if(Meteor.isServer){
 					username: 'blahblah'
 				});
 			});
+			describe('insertion tests', () => {
+				it('can\'t insert task for non-logged in user', () => {
+					const failText = 'purposeful fail';
+					const insertTask = Meteor.server.method_handlers['tasks.insert'];
+					const invocation = { notLoggedIn };
+					expect(insertTask.bind(invocation, failText)).to.throw(Meteor.Error('not-authorized'));
+				});
+				it('can insert task for logged-in user', () =>{
+					const testText = 'test task';
+					const taskCount = Tasks.find().count();
+					const insertTask = Meteor.server.method_handlers['tasks.insert'];
+					const invocation = { userId };
+					insertTask.apply(invocation, [testText]);
+					assert.equal(Tasks.find().count(), taskCount+1);
+				});
+			});
+
 			describe('deletion tests', () => {
-				it('can\'t delete other user\'s task (should throw not-authorized error)', () => {
+				it('can\'t delete other user\'s task (throws not-authorized error)', () => {
 					// Find the internal implementation of the task method in order to test in isolation
 					const deleteTask = Meteor.server.method_handlers['tasks.remove'];
 
@@ -40,9 +59,10 @@ if(Meteor.isServer){
 
 				});
 				it('can delete owned task', () => {
+					// current count of tasks
+					const taskCount = Tasks.find().count();
 					// Find the internal implementation of the task method in order to test in isolation
 					const deleteTask = Meteor.server.method_handlers['tasks.remove'];
-
 					// set up fake method invocation consistent with what the method expect
 					const invocation = { userId };
 
@@ -50,7 +70,7 @@ if(Meteor.isServer){
 					deleteTask.apply(invocation, [taskId]);
 
 					// verify method does what expected
-					assert.equal(Tasks.find().count(), 0);
+					assert.equal(Tasks.find().count(), taskCount-1);
 				});
 			});
 		});
