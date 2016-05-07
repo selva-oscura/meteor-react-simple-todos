@@ -73,6 +73,20 @@ if(Meteor.isServer){
 					assert.equal(Tasks.find().count(), taskCount-1);
 				});
 			});
+			describe('set checked tests', () => {
+				it('can set checked status to checked', () => {
+					// current count of tasks
+					const checkedCount = Tasks.find({checked:true}).count();
+					// Find the internal implementation of the task method in order to test in isolation
+					const setChecked = Meteor.server.method_handlers['tasks.setChecked'];
+					// set up fake method invocation consistent with what the method expect
+					const invocation = { userId };
+
+					// Run method with 'this' set to fake invocation
+					setChecked.apply(invocation, [taskId, true]);
+					assert.equal(Tasks.find({checked:true}).count(), checkedCount+1);
+				});
+			});
 		});
 	});
 }
